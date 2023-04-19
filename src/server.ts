@@ -41,12 +41,10 @@ function getPlayer(socket: { id: string }) {
 }
 
 let players: ReturnType<typeof getPlayer>[] = [];
-let bullets: any[] = [];
+let bullets: { id: string, playerId: string, position: { x: number, y: number } }[] = [];
 
 
 io.on('connection', socket => {
-    console.log('A player connected');
-
     const player = getPlayer(socket);
 
     players.push(player);
@@ -57,6 +55,8 @@ io.on('connection', socket => {
 
     socket.on('playerMoved', (data) => {
         const player = players.find(p => p.id === socket.id);
+
+
         if (player) {
             player.position = data.position;
             player.rotation = data.rotation;
@@ -65,17 +65,27 @@ io.on('connection', socket => {
         socket.broadcast.emit('playerMoved', data);
     });
 
+
     socket.on('playerShoot', (data) => {
         const player = players.find(p => p.id === socket.id);
         if (player) {
-            bullets.push(data);
+            const bullet = {playerId: socket.id, position: data.position, id: data.id};
+            bullets.push(bullet);
+            socket.broadcast.emit('playerShoot', bullet);
         }
-        socket.broadcast.emit('playerShoot', data);
+    });
+
+    socket.on('bulletMoved', (data) => {
+        const bullet = bullets.find(b => b.id === data.id);
+        if (bullet) {
+            bullet.position = data.position;
+            socket.broadcast.emit('bulletMoved', data);
+        }
 
     });
 
+
     socket.on('disconnect', () => {
-        console.log('A player disconnected');
         players = players.filter(p => p.id !== socket.id);
     });
 });
