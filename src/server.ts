@@ -20,21 +20,16 @@ const io = new Server(http, {
 
 let walls = generateRandomWalls();
 
-app.get('/', (req, res) => {
-        io.emit('initLevel', {walls, players})
-        return res.send('Hello World!')
-    }
-);
 
 function getColor() {
     return `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
 }
 
 
-function getPlayer(socket: { id: string }) {
+function getPlayer(socketId: string) {
     const position = {x: 40 * Math.floor(Math.random() * 10) + 20, y: 40 * Math.floor(Math.random() * 10) + 20};
     return {
-        id: socket.id,
+        id: socketId,
         color: getColor(),
         position,
         rotation: 0,
@@ -49,7 +44,7 @@ let host: Player;
 
 
 io.on('connection', socket => {
-    const player = getPlayer(socket);
+    const player = getPlayer(socket.id);
 
     if (!host) {
         host = player;
@@ -57,11 +52,12 @@ io.on('connection', socket => {
     }
     players.push(player);
 
-    socket.emit('newPlayer', player);
-
-    socket.on('startGame', () => {
-        io.emit('initLevel', {walls, players})
+    socket.on('restartGame', () => {
+        const newPlayers = players.map(p => getPlayer(p.id));
+        players = newPlayers;
+        io.emit('initLevel', {walls, players: newPlayers})
     });
+
 
     socket.on('playerMoved', (data) => {
         const player = players.find(p => p.id === socket.id);
@@ -97,10 +93,6 @@ io.on('connection', socket => {
 
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
-        if (host.id === socket.id) {
-            host = {...players[0], isHost: true};
-            socket.broadcast.emit('newHost', host);
-        }
 
     });
 });
