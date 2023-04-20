@@ -7,6 +7,9 @@ const app = express();
 
 app.use(helmet());
 
+type Player = { id: string, color: string, position: { x: number, y: number }, rotation: number, name: string, isHost: boolean };
+type Bullet = { id: string, playerId: string, position: { x: number, y: number } };
+
 const http = require('http').Server(app);
 const io = new Server(http, {
     cors: {
@@ -27,31 +30,38 @@ function getColor() {
     return `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
 }
 
+
 function getPlayer(socket: { id: string }) {
+    const position = {x: 40 * Math.floor(Math.random() * 10) + 20, y: 40 * Math.floor(Math.random() * 10) + 20};
     return {
         id: socket.id,
         color: getColor(),
-        position: {
-            x: 20,
-            y: 20
-        },
+        position,
         rotation: 0,
-        name: 'Kuba'
+        name: 'Kuba',
+        isHost: false
     };
 }
 
-let players: ReturnType<typeof getPlayer>[] = [];
-let bullets: { id: string, playerId: string, position: { x: number, y: number } }[] = [];
+let players: Player[] = [];
+let bullets: Bullet[] = [];
+let host: Player;
 
 
 io.on('connection', socket => {
     const player = getPlayer(socket);
 
+    if (!host) {
+        host = player;
+        player.isHost = true;
+    }
     players.push(player);
 
-    io.emit('initLevel', {walls, players})
-    socket.broadcast.emit('newPlayer', player);
+    socket.emit('newPlayer', player);
 
+    socket.on('startGame', () => {
+        io.emit('initLevel', {walls, players})
+    });
 
     socket.on('playerMoved', (data) => {
         const player = players.find(p => p.id === socket.id);
@@ -87,6 +97,11 @@ io.on('connection', socket => {
 
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
+        if (host.id === socket.id) {
+            host = {...players[0], isHost: true};
+            socket.broadcast.emit('newHost', host);
+        }
+
     });
 });
 
