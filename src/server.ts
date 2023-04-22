@@ -105,7 +105,7 @@ io.on(socketEventsDictonary.connection, socket => {
 
         console.log('players', players.map(p => p.stats));
 
-        socket.broadcast.emit(socketEventsDictonary.hitTarget, {...data, players});
+        io.emit(socketEventsDictonary.hitTarget, {...data, players});
         Logger.info('hit target event broadcasted');
     });
 
