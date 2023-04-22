@@ -76,18 +76,18 @@ io.on(socketEventsDictonary.connection, socket => {
             socket.broadcast.emit(socketEventsDictonary.fireBullet, bullet);
             Logger.info('fire bullet event broadcasted');
         }
-
     });
 
-    // todo: refactor this
-    socket.on('bulletMoved', (data) => {
-
-        const bullet = bullets.find(b => b.id === data.id);
+    socket.on(socketEventsDictonary.hitTarget, (data: {id: string, bulletId: string}) => {
+        Logger.info('hit target event', data);
+        const bullet = bullets.find(b => b.id === data.bulletId);
         if (bullet) {
-            bullet.position = data.position;
-            socket.broadcast.emit('bulletMoved', data);
+            bullets = bullets.filter(b => b.id !== data.bulletId);
         }
+        socket.broadcast.emit(socketEventsDictonary.hitTarget, data);
+        Logger.info('hit target event broadcasted');
     });
+
 
     socket.on(socketEventsDictonary.disconnect, () => {
         Logger.info('disconnect event', {socketId: socket.id});
