@@ -50,7 +50,7 @@ io.on('connection', socket => {
 
     players.push(player);
 
-    socket.on('setNickname', (data: {nickname: string}) => {
+    socket.on('setNickname', (data: { nickname: string }) => {
         console.log('🚀 - data', data)
         const player = players.find(p => p.id === socket.id);
         if (player) {
