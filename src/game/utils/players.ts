@@ -12,7 +12,7 @@ function getRandomName() {
     return nicknames[Math.floor(Math.random() * nicknames.length)];
 }
 
-export function getPlayer({socketId, color, name}: Partial<Player> & { socketId: string }): Player {
+export function getPlayer({socketId, color, name, stats}: Partial<Player> & { socketId: string }): Player {
     const position = {x: 40 * Math.floor(Math.random() * 10) + 20, y: 40 * Math.floor(Math.random() * 10) + 20};
     const rotation = Math.floor(Math.random() * Math.PI * 2);
     return {
@@ -21,5 +21,6 @@ export function getPlayer({socketId, color, name}: Partial<Player> & { socketId:
         name: name || getRandomName(),
         position,
         rotation,
+        stats: stats || {kills: 0, deaths: 0}
     };
 }

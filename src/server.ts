@@ -10,7 +10,14 @@ const app = express();
 
 app.use(helmet());
 
-export type Player = { id: string, color: string, position: { x: number, y: number }, rotation: number, name: string };
+export type Player = {
+    id: string,
+    name: string,
+    color: string,
+    rotation: number,
+    position: { x: number, y: number },
+    stats: { kills: number, deaths: number }
+};
 export type Bullet = { id: string, playerId: string, position: { x: number, y: number } };
 
 const http = require('http').Server(app);
@@ -54,7 +61,7 @@ io.on(socketEventsDictonary.connection, socket => {
     });
 
     socket.on(socketEventsDictonary.moveTank, (data) => {
-        Logger.info('move tank event', data);
+        // Logger.info('move tank event', data);
         const player = players.find(p => p.id === socket.id);
 
         if (player) {
@@ -63,7 +70,7 @@ io.on(socketEventsDictonary.connection, socket => {
         }
 
         socket.broadcast.emit(socketEventsDictonary.moveTank, data);
-        Logger.info('move tank event broadcasted');
+        // Logger.info('move tank event broadcasted');
     });
 
     socket.on(socketEventsDictonary.fireBullet, (data) => {
@@ -78,12 +85,26 @@ io.on(socketEventsDictonary.connection, socket => {
         }
     });
 
-    socket.on(socketEventsDictonary.hitTarget, (data: {id: string, bulletId: string}) => {
+    socket.on(socketEventsDictonary.hitTarget, (data: { hitTankId: string, bulletId: string }) => {
         Logger.info('hit target event', data);
         const bullet = bullets.find(b => b.id === data.bulletId);
+
         if (bullet) {
             bullets = bullets.filter(b => b.id !== data.bulletId);
         }
+
+        const deadPlayer = players.find(p => p.id === data.hitTankId);
+        if (deadPlayer) {
+            deadPlayer.stats.deaths++;
+        }
+
+        const killerPlayer = players.find(p => p.id === bullet.playerId);
+        if (killerPlayer) {
+            killerPlayer.stats.kills++;
+        }
+
+        console.log('players', players.map(p => p.stats));
+
         socket.broadcast.emit(socketEventsDictonary.hitTarget, data);
         Logger.info('hit target event broadcasted');
     });
