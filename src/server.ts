@@ -98,14 +98,14 @@ io.on(socketEventsDictonary.connection, socket => {
             deadPlayer.stats.deaths++;
         }
 
-        const killerPlayer = players.find(p => p.id === bullet.playerId);
+        const killerPlayer = players.find(p => p.id === bullet?.playerId);
         if (killerPlayer) {
             killerPlayer.stats.kills++;
         }
 
         console.log('players', players.map(p => p.stats));
 
-        socket.broadcast.emit(socketEventsDictonary.hitTarget, data);
+        socket.broadcast.emit(socketEventsDictonary.hitTarget, {...data, players});
         Logger.info('hit target event broadcasted');
     });
 
