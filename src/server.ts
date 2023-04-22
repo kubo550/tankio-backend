@@ -92,6 +92,8 @@ io.on(socketEventsDictonary.connection, socket => {
     socket.on(socketEventsDictonary.disconnect, () => {
         Logger.info('disconnect event', {socketId: socket.id});
         players = players.filter(p => p.id !== socket.id);
+
+        socket.broadcast.emit(socketEventsDictonary.playerConnected, {socketId: socket.id});
     });
 
 });
