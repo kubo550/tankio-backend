@@ -1,13 +1,13 @@
 import express from "express";
 import helmet from "helmet";
 import {Server} from "socket.io";
-import {generateRandomWalls} from "./game/utils";
+import {generateRandomWalls} from "./game/utils/createBoard";
 
 const app = express();
 
 app.use(helmet());
 
-type Player = { id: string, color: string, position: { x: number, y: number }, rotation: number, name: string, isHost: boolean };
+type Player = { id: string, color: string, position: { x: number, y: number }, rotation: number, name: string };
 type Bullet = { id: string, playerId: string, position: { x: number, y: number } };
 
 const http = require('http').Server(app);
@@ -18,43 +18,51 @@ const io = new Server(http, {
     }
 });
 
-let walls = generateRandomWalls();
 
-
-function getColor() {
+function getRandomColor() {
     return `rgb(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)})`;
 }
 
+function getRandomName() {
+    const nicknames = ["Canidae", "Felidae", "Cat", "Cattle", "Dog", "Donkey", "Goat", "Guinea pig", "Horse", "Pig",
+        "Rabbit", "Fancy rat varieties", "laboratory rat strains", "Sheep breeds", "Water buffalo breeds"]
+    return nicknames[Math.floor(Math.random() * nicknames.length)];
+}
 
-function getPlayer(socketId: string) {
+function getPlayer({socketId, color, name}: Partial<Player> & { socketId: string }): Player {
     const position = {x: 40 * Math.floor(Math.random() * 10) + 20, y: 40 * Math.floor(Math.random() * 10) + 20};
+    const rotation = Math.floor(Math.random() * Math.PI * 2);
     return {
         id: socketId,
-        color: getColor(),
+        color: color || getRandomColor(),
+        name: name || getRandomName(),
         position,
-        rotation: 0,
-        name: 'Kuba',
-        isHost: false
+        rotation,
     };
 }
 
 let players: Player[] = [];
 let bullets: Bullet[] = [];
-let host: Player;
 
 
 io.on('connection', socket => {
-    const player = getPlayer(socket.id);
+    const player = getPlayer({socketId: socket.id});
 
-    if (!host) {
-        host = player;
-        player.isHost = true;
-    }
     players.push(player);
 
+    socket.on('setNickname', (data: {nickname: string}) => {
+        console.log('🚀 - data', data)
+        const player = players.find(p => p.id === socket.id);
+        if (player) {
+            player.name = data.nickname;
+        }
+        console.log(player)
+    });
+
     socket.on('restartGame', () => {
-        const newPlayers = players.map(p => getPlayer(p.id));
+        const newPlayers = players.map(p => getPlayer({socketId: p.id, color: p.color, name: p.name}));
         players = newPlayers;
+        const walls = generateRandomWalls();
         io.emit('initLevel', {walls, players: newPlayers})
     });
 
