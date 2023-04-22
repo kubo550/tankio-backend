@@ -1,9 +1,26 @@
+import _ from 'lodash';
+
 const tileSize = 40;
 const cols = 10;
 const rows = 10;
 const grid: Cell[] = [];
 let current: Cell;
 
+
+function isBorderWall(wall: Wall) {
+    return wall.x === 0 || wall.y === 0 || wall.x === cols * tileSize || wall.y === rows * tileSize;
+}
+
+function removeRandomWalls(wallsBasedOnGrid: Wall[], numberOfWallsToRemove: number) {
+    for (let i = 0; i < numberOfWallsToRemove; i++) {
+        const randomIndex = Math.floor(Math.random() * wallsBasedOnGrid.length);
+        if (isBorderWall(wallsBasedOnGrid[randomIndex])) {
+            continue;
+        }
+        wallsBasedOnGrid.splice(randomIndex, 1);
+    }
+    return wallsBasedOnGrid;
+}
 
 export const generateRandomWalls = () => {
     grid.length = 0;
@@ -31,9 +48,12 @@ export const generateRandomWalls = () => {
             // @ts-ignore
             current = stack.pop();
         } else {
-            return createWallsBasedOnGrid(grid);
+            const wallsBasedOnGrid = createWallsBasedOnGrid(grid);
+            const numberOfWallsToRemove = _.random(10, wallsBasedOnGrid.length);
+            return removeRandomWalls(wallsBasedOnGrid, numberOfWallsToRemove);
         }
     }
+
 }
 
 function createWallsBasedOnGrid(grid: Cell[]) {
