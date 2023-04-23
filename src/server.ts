@@ -17,6 +17,7 @@ export type Player = {
     rotation: number,
     position: { x: number, y: number },
     stats: { kills: number, deaths: number }
+    state: 'lobby' | 'alive' | 'dead'
 };
 export type Bullet = { id: string, playerId: string, position: { x: number, y: number } };
 
@@ -31,6 +32,8 @@ const io = new Server(http, {
 
 let players: Player[] = [];
 let bullets: Bullet[] = [];
+
+
 
 
 io.on(socketEventsDictonary.connection, socket => {
@@ -52,11 +55,7 @@ io.on(socketEventsDictonary.connection, socket => {
     socket.on(socketEventsDictonary.startGame, () => {
         Logger.info('start game event');
 
-        const newPlayers = players.map(p => getPlayer({socketId: p.id, color: p.color, name: p.name}));
-        players = newPlayers;
-        const walls = generateRandomWalls();
-
-        io.emit(socketEventsDictonary.startGame, {walls, players: newPlayers})
+        emitNextLevel();
         Logger.info('start game event broadcasted');
     });
 
@@ -96,6 +95,7 @@ io.on(socketEventsDictonary.connection, socket => {
         const deadPlayer = players.find(p => p.id === data.hitTankId);
         if (deadPlayer) {
             deadPlayer.stats.deaths++;
+            deadPlayer.state = 'dead';
         }
 
         const killerPlayer = players.find(p => p.id === bullet?.playerId);
@@ -103,7 +103,13 @@ io.on(socketEventsDictonary.connection, socket => {
             killerPlayer.stats.kills++;
         }
 
-        console.log('players', players.map(p => p.stats));
+        const alivePlayers = players.filter(p => p.state === 'alive');
+        if (players.length > 1 && alivePlayers.length < 2) {
+            setTimeout(() => {
+                emitNextLevel();
+            }, 3000);
+        }
+
 
         io.emit(socketEventsDictonary.hitTarget, {...data, players});
         Logger.info('hit target event broadcasted');
@@ -118,6 +124,19 @@ io.on(socketEventsDictonary.connection, socket => {
     });
 
 });
+function emitNextLevel() {
+    const newPlayers = players.map(p => getPlayer({
+        socketId: p.id,
+        color: p.color,
+        name: p.name,
+        stats: p.stats,
+        state: 'alive'
+    }));
+    players = newPlayers;
+    const walls = generateRandomWalls();
+
+    io.emit(socketEventsDictonary.startGame, {walls, players: newPlayers})
+}
 
 const port = process.env.PORT || 8080;
 
