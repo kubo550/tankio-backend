@@ -25,6 +25,7 @@ const http = require('http').Server(app);
 const io = new Server(http, {
     cors: {
         origin: "http://localhost:3000",
+        // origin: "https://silly-actors-show-83-29-123-120.loca.lt",
         methods: ["GET", "POST"]
     }
 });
@@ -104,6 +105,8 @@ io.on(socketEventsDictonary.connection, socket => {
         }
 
         const alivePlayers = players.filter(p => p.state === 'alive');
+        console.log('alivePlayers.length', alivePlayers.length)
+        console.log('players.length', players.length)
         if (players.length > 1 && alivePlayers.length < 2) {
             setTimeout(() => {
                 emitNextLevel();
@@ -125,6 +128,7 @@ io.on(socketEventsDictonary.connection, socket => {
 
 });
 function emitNextLevel() {
+    bullets = [];
     const newPlayers = players.map(p => getPlayer({
         socketId: p.id,
         color: p.color,
