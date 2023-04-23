@@ -50,6 +50,7 @@ io.on(socketEventsDictonary.connection, socket => {
 
         if (player) {
             player.name = data.nickname;
+            io.emit(socketEventsDictonary.setNickname, {id: socket.id, nickname: data.nickname});
         }
     });
 
