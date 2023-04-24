@@ -24,8 +24,7 @@ export type Bullet = { id: string, playerId: string, position: { x: number, y: n
 const http = require('http').Server(app);
 const io = new Server(http, {
     cors: {
-        origin: "http://localhost:3000",
-        // origin: "https://silly-actors-show-83-29-123-120.loca.lt",
+        origin: "*",
         methods: ["GET", "POST"]
     }
 });
@@ -33,8 +32,6 @@ const io = new Server(http, {
 
 let players: Player[] = [];
 let bullets: Bullet[] = [];
-
-
 
 
 io.on(socketEventsDictonary.connection, socket => {
@@ -50,8 +47,8 @@ io.on(socketEventsDictonary.connection, socket => {
 
         if (player) {
             player.name = data.nickname;
-            io.emit(socketEventsDictonary.setNickname, {id: socket.id, nickname: data.nickname});
         }
+        io.emit(socketEventsDictonary.setNickname, {id: socket.id, nickname: data.nickname});
     });
 
     socket.on(socketEventsDictonary.startGame, () => {
@@ -128,6 +125,7 @@ io.on(socketEventsDictonary.connection, socket => {
     });
 
 });
+
 function emitNextLevel() {
     bullets = [];
     const newPlayers = players.map(p => getPlayer({
