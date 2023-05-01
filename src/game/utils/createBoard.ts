@@ -6,7 +6,7 @@ const rows = 10;
 const grid: Cell[] = [];
 let current: Cell;
 
-const minWallsToremove = 30;
+const minWallsToRemove = 70;
 
 
 function isBorderWall(wall: Wall) {
@@ -51,7 +51,7 @@ export const generateRandomWalls = () => {
             current = stack.pop();
         } else {
             const wallsBasedOnGrid = createWallsBasedOnGrid(grid);
-            const numberOfWallsToRemove = _.random(minWallsToremove, wallsBasedOnGrid.length);
+            const numberOfWallsToRemove = _.random(minWallsToRemove, wallsBasedOnGrid.length);
             return removeRandomWalls(wallsBasedOnGrid, numberOfWallsToRemove);
         }
     }

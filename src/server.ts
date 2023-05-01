@@ -1,8 +1,10 @@
 import express from "express";
 import helmet from "helmet";
+import _ from "lodash";
 import {Server} from "socket.io";
+
 import {generateRandomWalls} from "./game/utils/createBoard";
-import {getPlayer} from "./game/utils/players";
+import {getRandomColor, getRandomName} from "./game/utils/players";
 import {socketEventsDictonary} from "./game/domain/types";
 import {Logger} from "./logger/logger";
 
@@ -34,6 +36,32 @@ let players: Player[] = [];
 let bullets: Bullet[] = [];
 
 
+function generatePosition() {
+    const possiblePossitions = _.range(20,420, 40)
+    return {x: _.sample(possiblePossitions), y: _.sample(possiblePossitions)}
+}
+
+export function getPlayer({socketId, color, name, stats, state}: Partial<Player> & { socketId: string }): Player {
+    let position = generatePosition();
+    let safeCounter = 100;
+
+    while (players.some(p => p?.position?.x === position.x && p?.position?.y === position.y) && safeCounter > 0) {
+        position = generatePosition();
+        safeCounter--;
+    }
+
+    const rotation = Math.floor(Math.random() * Math.PI * 2);
+    return {
+        id: socketId,
+        color: color || getRandomColor(),
+        name: name || getRandomName(),
+        position,
+        rotation,
+        stats: stats || {kills: 0, deaths: 0},
+        state: state || 'lobby',
+    };
+}
+
 io.on(socketEventsDictonary.connection, socket => {
     Logger.info('connection event', {socketId: socket.id});
 
@@ -59,7 +87,6 @@ io.on(socketEventsDictonary.connection, socket => {
     });
 
     socket.on(socketEventsDictonary.moveTank, (data) => {
-        // Logger.info('move tank event', data);
         const player = players.find(p => p.id === socket.id);
 
         if (player) {
@@ -68,7 +95,6 @@ io.on(socketEventsDictonary.connection, socket => {
         }
 
         socket.broadcast.emit(socketEventsDictonary.moveTank, data);
-        // Logger.info('move tank event broadcasted');
     });
 
     socket.on(socketEventsDictonary.fireBullet, (data) => {
@@ -141,7 +167,7 @@ function emitNextLevel() {
     io.emit(socketEventsDictonary.startGame, {walls, players: newPlayers})
 }
 
-const port = process.env.PORT || 8080;
+const port = 8080;
 
 http.listen(port, () => {
     Logger.info(`🚀 - Server is running on port ${port}`);
